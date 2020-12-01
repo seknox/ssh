@@ -117,6 +117,14 @@ type ServerConfig struct {
 	// GSSAPIWithMICConfig includes gssapi server and callback, which if both non-nil, is used
 	// when gssapi-with-mic authentication is selected (RFC 4462 section 3).
 	GSSAPIWithMICConfig *GSSAPIWithMICConfig
+
+	// NextAuthMethodsCallback, if non-nil, is called each time the server
+	// replies with available authentication methods. Typically, this is
+	// called when an authentication request has failed.
+	//
+	// A PartialSuccess flag should be set to indicate
+	// a multi-step authentication process.
+	NextAuthMethodsCallback func(conn ConnMetadata, err error) ([]string, bool, error)
 }
 
 // AddHostKey adds a private key as a host key. If an existing host
@@ -631,18 +639,29 @@ userAuthLoop:
 		authFailures++
 
 		var failureMsg userAuthFailureMsg
-		if config.PasswordCallback != nil {
-			failureMsg.Methods = append(failureMsg.Methods, "password")
-		}
-		if config.PublicKeyCallback != nil {
-			failureMsg.Methods = append(failureMsg.Methods, "publickey")
-		}
-		if config.KeyboardInteractiveCallback != nil {
-			failureMsg.Methods = append(failureMsg.Methods, "keyboard-interactive")
-		}
-		if config.GSSAPIWithMICConfig != nil && config.GSSAPIWithMICConfig.Server != nil &&
-			config.GSSAPIWithMICConfig.AllowLogin != nil {
-			failureMsg.Methods = append(failureMsg.Methods, "gssapi-with-mic")
+
+		if config.NextAuthMethodsCallback != nil {
+			methods, partial, err := config.NextAuthMethodsCallback(s, authErr)
+			if err != nil {
+				return nil, err
+			}
+			failureMsg.Methods = methods
+			failureMsg.PartialSuccess = partial
+		} else {
+			if config.PasswordCallback != nil {
+				failureMsg.Methods = append(failureMsg.Methods, "password")
+			}
+			if config.PublicKeyCallback != nil {
+				failureMsg.Methods = append(failureMsg.Methods, "publickey")
+			}
+			if config.KeyboardInteractiveCallback != nil {
+				failureMsg.Methods = append(failureMsg.Methods, "keyboard-interactive")
+			}
+			if config.GSSAPIWithMICConfig != nil && config.GSSAPIWithMICConfig.Server != nil &&
+				config.GSSAPIWithMICConfig.AllowLogin != nil {
+				failureMsg.Methods = append(failureMsg.Methods, "gssapi-with-mic")
+			}
+
 		}
 
 		if len(failureMsg.Methods) == 0 {
