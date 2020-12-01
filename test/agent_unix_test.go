@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd
+// +build aix darwin dragonfly freebsd linux netbsd openbsd
 
 package test
 
@@ -10,8 +10,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/seknox/ssh"
-	"github.com/seknox/ssh/agent"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 func TestAgentForward(t *testing.T) {

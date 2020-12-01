@@ -16,8 +16,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/seknox/ssh"
-	"github.com/seknox/ssh/terminal"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func ExampleNewServerConn() {
@@ -134,13 +134,13 @@ func ExampleNewServerConn() {
 				if err != nil {
 					break
 				}
-				logger.Debug(line)
+				fmt.Println(line)
 			}
 		}()
 	}
 }
 
-func ExampleHostKeyCheck() {
+func ExampleClientConfig_HostKeyCallback() {
 	// Every client must provide a host key check.  Here is a
 	// simple-minded parse of OpenSSH's known_hosts file
 	host := "hostname"
@@ -198,6 +198,7 @@ func ExampleDial() {
 	if err != nil {
 		log.Fatal("Failed to dial: ", err)
 	}
+	defer client.Close()
 
 	// Each ClientConn can support multiple interactive sessions,
 	// represented by a Session.
@@ -214,7 +215,7 @@ func ExampleDial() {
 	if err := session.Run("/usr/bin/whoami"); err != nil {
 		log.Fatal("Failed to run: " + err.Error())
 	}
-	logger.Debug(b.String())
+	fmt.Println(b.String())
 }
 
 func ExamplePublicKeys() {
